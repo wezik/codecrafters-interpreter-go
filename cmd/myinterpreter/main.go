@@ -31,8 +31,16 @@ func main() {
 	}
 
 	if len(fileContents) > 0 {
-		panic("Scanner not implemented")
+
+		for i := 0; i < len(fileContents); i++ {
+			if fileContents[i] == '(' {
+				fmt.Println("LEFT_PAREN ( null")
+			} else if fileContents[i] == ')' {
+				fmt.Println("RIGHT_PAREN ) null")
+			}
+		}
+		fmt.Println("EOF  null")
 	} else {
-		fmt.Println("EOF  null") // Placeholder, remove this line when implementing the scanner
+		fmt.Println("EOF  null")
 	}
 }
