@@ -129,6 +129,13 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 
 			if numberActive {
 				if b == '.' {
+					if strings.Contains(numberBuffer, ".") {
+						message := "Invalid number."
+						errors = append(errors, LexError{currentLine, message})
+						numberActive = false
+						numberBuffer = ""
+						continue
+					}
 					numberBuffer += string(b)
 					continue
 				} else if b < '0' || b > '9' {
