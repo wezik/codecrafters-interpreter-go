@@ -91,6 +91,7 @@ var singleCharTokens = map[byte]LexToken{
 
 var dualCharTokensTriggers = []string{
 	"EQUAL",
+	"SLASH",
 }
 
 var dualCharTokens = map[string]LexToken{
@@ -98,6 +99,7 @@ var dualCharTokens = map[string]LexToken{
 	"==": newTokenNoLit("EQUAL_EQUAL", "=="),
 	"<=": newTokenNoLit("LESS_EQUAL", "<="),
 	">=": newTokenNoLit("GREATER_EQUAL", ">="),
+	"//": newTokenNoLit("COMMENT", "//"),
 }
 
 var ignoreChars = []byte{' ', '\t', '\r', '	'}
@@ -107,13 +109,27 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	errors := []LexError{}
 	currentLine := 1
 	lastError := false
+	commentActive := false
 	if len(content) > 0 {
 		for _, b := range content {
+
+			if commentActive {
+				if b == '\n' {
+					commentActive = false
+				}
+				continue
+			}
+
 			if lexToken, ok := singleCharTokens[b]; ok {
 				if len(tokens) > 0 && slices.Contains(dualCharTokensTriggers, lexToken.tokenType) {
 					prev := tokens[len(tokens)-1]
 					lexemeCombined := prev.lexeme + lexToken.lexeme
 					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok && !lastError {
+						if dualLexToken.tokenType == "COMMENT" {
+							commentActive = true
+							tokens = tokens[:len(tokens)-1]
+							continue
+						}
 						tokens[len(tokens)-1] = dualLexToken
 					} else {
 						tokens = append(tokens, lexToken)
