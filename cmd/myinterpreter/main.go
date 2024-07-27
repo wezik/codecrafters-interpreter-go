@@ -106,10 +106,11 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	tokens := []LexToken{}
 	errors := []LexError{}
 	currentLine := 1
+	lastError := false
 	if len(content) > 0 {
 		for _, b := range content {
 			if lexToken, ok := singleCharTokens[b]; ok {
-				if slices.Contains(dualCharTokensTriggers, lexToken.tokenType) {
+				if slices.Contains(dualCharTokensTriggers, lexToken.tokenType) && !lastError {
 					prev := tokens[len(tokens)-1]
 					lexemeCombined := prev.lexeme + lexToken.lexeme
 					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok {
@@ -127,7 +128,10 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 			} else {
 				message := fmt.Sprintf("Unexpected character: %s", string(b))
 				errors = append(errors, LexError{currentLine, message})
+				lastError = true
+				continue
 			}
+			lastError = false
 		}
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
 	}
