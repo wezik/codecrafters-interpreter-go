@@ -58,10 +58,17 @@ func main() {
 
 	tokens := []LexToken{}
 
+	var line int = 1
+	var interpretError bool = false
 	if len(fileContents) > 0 {
 		for _, b := range fileContents {
 			if lexToken, ok := singleCharTokens[b]; ok {
 				tokens = append(tokens, lexToken)
+			} else if (b != ' ' && b != '\n' && b != '\t' && b != '\r') {
+				fmt.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
+				interpretError = true
+			} else if (b == '\n') {
+				line += 1
 			}
 		}
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
@@ -71,5 +78,8 @@ func main() {
 
 	for _, t := range tokens {
 		fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
+	}
+	if interpretError {
+		os.Exit(65)
 	}
 }
