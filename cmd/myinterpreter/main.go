@@ -85,6 +85,8 @@ var singleCharTokens = map[byte]LexToken{
 	'/': newTokenNoLit("SLASH", "/"),
 	'!': newTokenNoLit("BANG", "!"),
 	'=': newTokenNoLit("EQUAL", "="),
+	'<': newTokenNoLit("LESS", "<"),
+	'>': newTokenNoLit("GREATER", ">"),
 }
 
 var dualCharTokensTriggers = []string{
@@ -94,6 +96,8 @@ var dualCharTokensTriggers = []string{
 var dualCharTokens = map[string]LexToken{
 	"!=": newTokenNoLit("BANG_EQUAL", "!="),
 	"==": newTokenNoLit("EQUAL_EQUAL", "=="),
+	"<=": newTokenNoLit("LESS_EQUAL", "<="),
+	">=": newTokenNoLit("GREATER_EQUAL", ">="),
 }
 
 var ignoreChars = []byte{' ', '\t', '\r', '	'}
