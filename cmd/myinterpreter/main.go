@@ -110,10 +110,10 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	if len(content) > 0 {
 		for _, b := range content {
 			if lexToken, ok := singleCharTokens[b]; ok {
-				if slices.Contains(dualCharTokensTriggers, lexToken.tokenType) && !lastError {
+				if len(tokens) > 0 && slices.Contains(dualCharTokensTriggers, lexToken.tokenType) {
 					prev := tokens[len(tokens)-1]
 					lexemeCombined := prev.lexeme + lexToken.lexeme
-					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok {
+					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok && !lastError {
 						tokens[len(tokens)-1] = dualLexToken
 					} else {
 						tokens = append(tokens, lexToken)
