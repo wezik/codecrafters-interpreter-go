@@ -202,6 +202,12 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 			breakContinuity = false
 		}
 	}
+	if numberActive {
+		if !strings.Contains(numberBuffer, ".") {
+			numberBuffer += ".0"
+		}
+		tokens = append(tokens, newToken("NUMBER", numberBuffer, numberBuffer))
+	}
 	if stringActive {
 		message := "Unterminated string."
 		errors = append(errors, LexError{currentLine, message})
