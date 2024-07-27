@@ -110,13 +110,37 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	currentLine := 1
 	breakContinuity := false
 	commentActive := false
+	stringBuffer := ""
+	stringActive := false
 	if len(content) > 0 {
 		for _, b := range content {
 
+			if b == '"' {
+				if stringActive {
+					stringActive = !stringActive
+					tokens = append(tokens, newToken("STRING", "\""+stringBuffer+"\"", stringBuffer))
+					stringBuffer = ""
+				} else {
+					stringActive = true
+				}
+				continue
+			}
+
 			if b == '\n' {
+				if stringActive {
+					message := "Unterminated string."
+					errors = append(errors, LexError{currentLine, message})
+					stringActive = false
+					stringBuffer = ""
+				}
 				commentActive = false
 				breakContinuity = true
 				currentLine += 1
+				continue
+			}
+
+			if stringActive {
+				stringBuffer += string(b)
 				continue
 			}
 
