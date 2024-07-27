@@ -133,8 +133,8 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 			}
 			lastError = false
 		}
-		tokens = append(tokens, newTokenNoLit("EOF", ""))
 	}
+	tokens = append(tokens, newTokenNoLit("EOF", ""))
 
 	return tokens, errors
 }
