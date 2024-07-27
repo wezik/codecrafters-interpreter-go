@@ -63,12 +63,29 @@ func main() {
 	var interpretError bool = false
 	l := log.New(os.Stderr, "", 0)
 	if len(fileContents) > 0 {
+		var prev byte = 0
 		for _, b := range fileContents {
 			if lexToken, ok := singleCharTokens[b]; ok {
+				if prev == '=' {
+					tokens = append(tokens, newTokenNoLit("EQUAL", "="))
+					prev = 0
+				}
 				tokens = append(tokens, lexToken)
 			} else if b != ' ' && b != '\n' && b != '\t' && b != '\r' {
-				l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
-				interpretError = true
+				if b == '=' {
+					if prev == '!' {
+						tokens = append(tokens, newTokenNoLit("BANG_EQUAL", "!="))
+						prev = 0
+					} else if prev == '=' {
+						tokens = append(tokens, newTokenNoLit("EQUAL_EQUAL", "=="))
+						prev = 0
+					} else {
+						prev = b
+					}
+				} else {
+					l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
+					interpretError = true
+				}
 			} else if b == '\n' {
 				line += 1
 			}
