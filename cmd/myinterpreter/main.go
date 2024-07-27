@@ -90,6 +90,9 @@ func main() {
 				line += 1
 			}
 		}
+		if prev == '=' {
+			tokens = append(tokens, newTokenNoLit("EQUAL", "="))
+		}
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
 	} else {
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
