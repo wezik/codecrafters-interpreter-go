@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 )
 
 type LexError struct {
@@ -112,8 +113,33 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	commentActive := false
 	stringBuffer := ""
 	stringActive := false
+	numberBuffer := ""
+	numberActive := false
 	if len(content) > 0 {
 		for _, b := range content {
+
+			// is a digit
+			if b >= '0' && b <= '9' {
+				if !numberActive {
+					numberActive = true
+				}
+				numberBuffer += string(b)
+				continue
+			}
+
+			if numberActive {
+				if b == '.' {
+					numberBuffer += string(b)
+					continue
+				} else if b < '0' || b > '9' {
+					numberActive = false
+					if !strings.Contains(numberBuffer, ".") {
+						numberBuffer += ".0"
+					}
+					tokens = append(tokens, newToken("NUMBER", numberBuffer, numberBuffer))
+					numberBuffer = ""
+				}
+			}
 
 			if b == '"' {
 				if stringActive {
