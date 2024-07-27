@@ -66,10 +66,10 @@ func main() {
 		for _, b := range fileContents {
 			if lexToken, ok := singleCharTokens[b]; ok {
 				tokens = append(tokens, lexToken)
-			} else if (b != ' ' && b != '\n' && b != '\t' && b != '\r') {
+			} else if b != ' ' && b != '\n' && b != '\t' && b != '\r' {
 				l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
 				interpretError = true
-			} else if (b == '\n') {
+			} else if b == '\n' {
 				line += 1
 			}
 		}
