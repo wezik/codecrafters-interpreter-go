@@ -108,23 +108,29 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 	tokens := []LexToken{}
 	errors := []LexError{}
 	currentLine := 1
-	lastError := false
+	breakContinuity := false
 	commentActive := false
 	if len(content) > 0 {
 		for _, b := range content {
 
-			if commentActive {
-				if b == '\n' {
-					commentActive = false
-				}
+			if b == '\n' {
+				commentActive = false
+				breakContinuity = true
+				currentLine += 1
+				continue
+			}
+
+			if commentActive || slices.Contains(ignoreChars, b) {
+				breakContinuity = true
 				continue
 			}
 
 			if lexToken, ok := singleCharTokens[b]; ok {
-				if len(tokens) > 0 && slices.Contains(dualCharTokensTriggers, lexToken.tokenType) {
+				isTokenContinous := slices.Contains(dualCharTokensTriggers, lexToken.tokenType)
+				if isTokenContinous && len(tokens) > 0 {
 					prev := tokens[len(tokens)-1]
 					lexemeCombined := prev.lexeme + lexToken.lexeme
-					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok && !lastError {
+					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok && !breakContinuity {
 						if dualLexToken.tokenType == "COMMENT" {
 							commentActive = true
 							tokens = tokens[:len(tokens)-1]
@@ -137,17 +143,13 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 				} else {
 					tokens = append(tokens, lexToken)
 				}
-			} else if b == '\n' {
-				currentLine += 1
-			} else if slices.Contains(ignoreChars, b) {
-				continue
 			} else {
 				message := fmt.Sprintf("Unexpected character: %s", string(b))
 				errors = append(errors, LexError{currentLine, message})
-				lastError = true
+				breakContinuity = true
 				continue
 			}
-			lastError = false
+			breakContinuity = false
 		}
 	}
 	tokens = append(tokens, newTokenNoLit("EOF", ""))
