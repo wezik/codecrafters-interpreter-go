@@ -19,6 +19,20 @@ func newTokenNoLit(tokenType string, lexeme string) LexToken {
 	return LexToken{tokenType, lexeme, "null"}
 }
 
+var singleCharTokens = map[byte]LexToken{
+	'{': newTokenNoLit("LEFT_BRACE", "{"),
+	'}': newTokenNoLit("RIGHT_BRACE", "}"),
+	'(': newTokenNoLit("LEFT_PAREN", "("),
+	')': newTokenNoLit("RIGHT_PAREN", ")"),
+	'*': newTokenNoLit("STAR", "*"),
+	'.': newTokenNoLit("DOT", "."),
+	',': newTokenNoLit("COMMA", ","),
+	'+': newTokenNoLit("PLUS", "+"),
+	'-': newTokenNoLit("MINUS", "-"),
+	';': newTokenNoLit("SEMICOLON", ";"),
+	'/': newTokenNoLit("SLASH", "/"),
+}
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
@@ -46,14 +60,8 @@ func main() {
 
 	if len(fileContents) > 0 {
 		for _, b := range fileContents {
-			if b == '{' {
-				tokens = append(tokens, newTokenNoLit("LEFT_BRACE", "{"))
-			} else if b == '}' {
-				tokens = append(tokens, newTokenNoLit("RIGHT_BRACE", "}"))
-			} else if b == '(' {
-				tokens = append(tokens, newTokenNoLit("LEFT_PAREN", "("))
-			} else if b == ')' {
-				tokens = append(tokens, newTokenNoLit("RIGHT_PAREN", ")"))
+			if lexToken, ok := singleCharTokens[b]; ok {
+				tokens = append(tokens, lexToken)
 			}
 		}
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
