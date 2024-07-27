@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -60,12 +61,13 @@ func main() {
 
 	var line int = 1
 	var interpretError bool = false
+	l := log.New(os.Stderr, "", 0)
 	if len(fileContents) > 0 {
 		for _, b := range fileContents {
 			if lexToken, ok := singleCharTokens[b]; ok {
 				tokens = append(tokens, lexToken)
 			} else if (b != ' ' && b != '\n' && b != '\t' && b != '\r') {
-				fmt.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
+				l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
 				interpretError = true
 			} else if (b == '\n') {
 				line += 1
