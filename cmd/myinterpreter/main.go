@@ -2,9 +2,18 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"slices"
 )
+
+type LexError struct {
+	line    int
+	message string
+}
+
+func (e LexError) String() string {
+	return fmt.Sprintf("[line %v] Error: %s", e.line, e.message)
+}
 
 type LexToken struct {
 	tokenType string
@@ -18,20 +27,6 @@ func newToken(tokenType string, lexeme string, literal string) LexToken {
 
 func newTokenNoLit(tokenType string, lexeme string) LexToken {
 	return LexToken{tokenType, lexeme, "null"}
-}
-
-var singleCharTokens = map[byte]LexToken{
-	'{': newTokenNoLit("LEFT_BRACE", "{"),
-	'}': newTokenNoLit("RIGHT_BRACE", "}"),
-	'(': newTokenNoLit("LEFT_PAREN", "("),
-	')': newTokenNoLit("RIGHT_PAREN", ")"),
-	'*': newTokenNoLit("STAR", "*"),
-	'.': newTokenNoLit("DOT", "."),
-	',': newTokenNoLit("COMMA", ","),
-	'+': newTokenNoLit("PLUS", "+"),
-	'-': newTokenNoLit("MINUS", "-"),
-	';': newTokenNoLit("SEMICOLON", ";"),
-	'/': newTokenNoLit("SLASH", "/"),
 }
 
 func main() {
@@ -57,64 +52,81 @@ func main() {
 		os.Exit(1)
 	}
 
-	tokens := []LexToken{}
+	tokens, errors := tokenize(fileContents)
 
-	var line int = 1
-	var interpretError bool = false
-	l := log.New(os.Stderr, "", 0)
-	if len(fileContents) > 0 {
-		var prev byte = 0
-		for _, b := range fileContents {
-			if lexToken, ok := singleCharTokens[b]; ok {
-				if prev == '=' {
-					tokens = append(tokens, newTokenNoLit("EQUAL", "="))
-					prev = 0
-				} else if prev == '!' {
-					tokens = append(tokens, newTokenNoLit("BANG", "!"))
-					prev = 0
-				}
-				tokens = append(tokens, lexToken)
-			} else if b != ' ' && b != '\n' && b != '\t' && b != '\r' {
-				if b == '=' {
-					if prev == '!' {
-						tokens = append(tokens, newTokenNoLit("BANG_EQUAL", "!="))
-						prev = 0
-					} else if prev == '=' {
-						tokens = append(tokens, newTokenNoLit("EQUAL_EQUAL", "=="))
-						prev = 0
-					} else {
-						prev = b
-					}
-				} else if b == '!' {
-					if prev == '!' {
-						tokens = append(tokens, newTokenNoLit("BANG", "!"))
-						prev = b
-					} else {
-						prev = b
-					}
-				} else {
-					l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
-					interpretError = true
-				}
-
-			} else if b == '\n' {
-				line += 1
-			}
+	errorsLen := len(errors)
+	if errorsLen > 0 {
+		for _, e := range errors {
+			fmt.Fprintln(os.Stderr, e.String())
 		}
-		if prev == '=' {
-			tokens = append(tokens, newTokenNoLit("EQUAL", "="))
-		} else if prev == '!' {
-			tokens = append(tokens, newTokenNoLit("BANG", "!"))
-		}
-		tokens = append(tokens, newTokenNoLit("EOF", ""))
-	} else {
-		tokens = append(tokens, newTokenNoLit("EOF", ""))
 	}
 
 	for _, t := range tokens {
 		fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
 	}
-	if interpretError {
+
+	if errorsLen > 0 {
 		os.Exit(65)
 	}
+
+}
+
+var singleCharTokens = map[byte]LexToken{
+	'{': newTokenNoLit("LEFT_BRACE", "{"),
+	'}': newTokenNoLit("RIGHT_BRACE", "}"),
+	'(': newTokenNoLit("LEFT_PAREN", "("),
+	')': newTokenNoLit("RIGHT_PAREN", ")"),
+	'*': newTokenNoLit("STAR", "*"),
+	'.': newTokenNoLit("DOT", "."),
+	',': newTokenNoLit("COMMA", ","),
+	'+': newTokenNoLit("PLUS", "+"),
+	'-': newTokenNoLit("MINUS", "-"),
+	';': newTokenNoLit("SEMICOLON", ";"),
+	'/': newTokenNoLit("SLASH", "/"),
+	'!': newTokenNoLit("BANG", "!"),
+	'=': newTokenNoLit("EQUAL", "="),
+}
+
+var dualCharTokensTriggers = []string{
+	"EQUAL",
+}
+
+var dualCharTokens = map[string]LexToken{
+	"!=": newTokenNoLit("BANG_EQUAL", "!="),
+	"==": newTokenNoLit("EQUAL_EQUAL", "=="),
+}
+
+var ignoreChars = []byte{' ', '\t', '\r', '	'}
+
+func tokenize(content []byte) ([]LexToken, []LexError) {
+	tokens := []LexToken{}
+	errors := []LexError{}
+	currentLine := 1
+	if len(content) > 0 {
+		for _, b := range content {
+			if lexToken, ok := singleCharTokens[b]; ok {
+				if slices.Contains(dualCharTokensTriggers, lexToken.tokenType) {
+					prev := tokens[len(tokens)-1]
+					lexemeCombined := prev.lexeme + lexToken.lexeme
+					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok {
+						tokens[len(tokens)-1] = dualLexToken
+					} else {
+						tokens = append(tokens, lexToken)
+					}
+				} else {
+					tokens = append(tokens, lexToken)
+				}
+			} else if b == '\n' {
+				currentLine += 1
+			} else if slices.Contains(ignoreChars, b) {
+				continue
+			} else {
+				message := fmt.Sprintf("Unexpected character: %s", string(b))
+				errors = append(errors, LexError{currentLine, message})
+			}
+		}
+		tokens = append(tokens, newTokenNoLit("EOF", ""))
+	}
+
+	return tokens, errors
 }
