@@ -69,6 +69,9 @@ func main() {
 				if prev == '=' {
 					tokens = append(tokens, newTokenNoLit("EQUAL", "="))
 					prev = 0
+				} else if prev == '!' {
+					tokens = append(tokens, newTokenNoLit("BANG", "!"))
+					prev = 0
 				}
 				tokens = append(tokens, lexToken)
 			} else if b != ' ' && b != '\n' && b != '\t' && b != '\r' {
@@ -82,16 +85,26 @@ func main() {
 					} else {
 						prev = b
 					}
+				} else if b == '!' {
+					if prev == '!' {
+						tokens = append(tokens, newTokenNoLit("BANG", "!"))
+						prev = b
+					} else {
+						prev = b
+					}
 				} else {
 					l.Printf("[line %v] Error: Unexpected character: %s\n", line, string(b))
 					interpretError = true
 				}
+
 			} else if b == '\n' {
 				line += 1
 			}
 		}
 		if prev == '=' {
 			tokens = append(tokens, newTokenNoLit("EQUAL", "="))
+		} else if prev == '!' {
+			tokens = append(tokens, newTokenNoLit("BANG", "!"))
 		}
 		tokens = append(tokens, newTokenNoLit("EOF", ""))
 	} else {
