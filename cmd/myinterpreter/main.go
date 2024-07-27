@@ -176,6 +176,10 @@ func tokenize(content []byte) ([]LexToken, []LexError) {
 			breakContinuity = false
 		}
 	}
+	if stringActive {
+		message := "Unterminated string."
+		errors = append(errors, LexError{currentLine, message})
+	}
 	tokens = append(tokens, newTokenNoLit("EOF", ""))
 
 	return tokens, errors
