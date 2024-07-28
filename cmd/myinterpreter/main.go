@@ -4,36 +4,34 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"strings"
 )
-
-type LexError struct {
-	line    int
-	message string
-}
-
-func (e LexError) String() string {
-	return fmt.Sprintf("[line %v] Error: %s", e.line, e.message)
-}
-
-type LexToken struct {
-	tokenType string
-	lexeme    string
-	literal   string
-}
-
-func newToken(tokenType string, lexeme string, literal string) LexToken {
-	return LexToken{tokenType, lexeme, literal}
-}
-
-func newTokenNoLit(tokenType string, lexeme string) LexToken {
-	return LexToken{tokenType, lexeme, "null"}
-}
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
+	fileContents := readArgs()
+
+	tokens, errors := tokenize(fileContents)
+
+	errorsLen := len(errors)
+	if errorsLen > 0 {
+		for _, e := range errors {
+			fmt.Fprintln(os.Stderr, e.Error())
+		}
+	}
+
+	for _, t := range tokens {
+		fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
+	}
+
+	if errorsLen > 0 {
+		os.Exit(65)
+	}
+
+}
+
+func readArgs() []byte {
 	if len(os.Args) < 3 {
 		fmt.Fprintln(os.Stderr, "Usage: ./your_program.sh tokenize <filename>")
 		os.Exit(1)
@@ -53,23 +51,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	tokens, errors := tokenize(fileContents)
+	return fileContents
+}
 
-	errorsLen := len(errors)
-	if errorsLen > 0 {
-		for _, e := range errors {
-			fmt.Fprintln(os.Stderr, e.String())
-		}
-	}
+type LexError struct {
+	line    int
+	message string
+}
 
-	for _, t := range tokens {
-		fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
-	}
+func (e LexError) Error() string {
+	return fmt.Sprintf("[line %d] Error: %s", e.line, e.message)
+}
 
-	if errorsLen > 0 {
-		os.Exit(65)
-	}
+type LexToken struct {
+	tokenType string
+	lexeme    string
+	literal   string
+}
 
+func newToken(tokenType string, lexeme string, literal string) LexToken {
+	return LexToken{tokenType, lexeme, literal}
+}
+
+func newTokenNoLit(tokenType string, lexeme string) LexToken {
+	return LexToken{tokenType, lexeme, "null"}
 }
 
 var singleCharTokens = map[byte]LexToken{
@@ -90,9 +95,12 @@ var singleCharTokens = map[byte]LexToken{
 	'>': newTokenNoLit("GREATER", ">"),
 }
 
-var dualCharTokensTriggers = []string{
-	"EQUAL",
-	"SLASH",
+var dualCharTokenTriggers = []string{
+	"<",
+	">",
+	"!",
+	"=",
+	"/",
 }
 
 var dualCharTokens = map[string]LexToken{
@@ -105,121 +113,138 @@ var dualCharTokens = map[string]LexToken{
 
 var ignoreChars = []byte{' ', '\t', '\r', '	'}
 
-func tokenize(content []byte) ([]LexToken, []LexError) {
+var content = []byte{}
+var contentN = -1
+var currentLine = 1
+
+func nextByte() (byte, bool) {
+	if contentN >= len(content) - 1 {
+		return 0, false
+	}
+	contentN += 1
+	result := content[contentN]
+	return result, true
+}
+
+func tickBack() {
+	contentN -= 1
+}
+
+func tokenize(input []byte) ([]LexToken, []error) {
+	content = input
 	tokens := []LexToken{}
-	errors := []LexError{}
-	currentLine := 1
-	breakContinuity := false
-	commentActive := false
-	stringBuffer := ""
-	stringActive := false
-	numberBuffer := ""
-	numberActive := false
-	if len(content) > 0 {
-		for _, b := range content {
+	errors := []error{}
 
-			// is a digit
-			if b >= '0' && b <= '9' {
-				if !numberActive {
-					numberActive = true
-				}
-				numberBuffer += string(b)
-				continue
-			}
+	for b, ok := nextByte(); ok; b, ok = nextByte() {
 
-			if numberActive {
-				if b == '.' {
-					if strings.Contains(numberBuffer, ".") {
-						message := "Invalid number."
-						errors = append(errors, LexError{currentLine, message})
-						numberActive = false
-						numberBuffer = ""
-						continue
-					}
-					numberBuffer += string(b)
-					continue
-				} else if b < '0' || b > '9' {
-					numberActive = false
-					if !strings.Contains(numberBuffer, ".") {
-						numberBuffer += ".0"
-					}
-					tokens = append(tokens, newToken("NUMBER", numberBuffer, numberBuffer))
-					numberBuffer = ""
-				}
-			}
-
-			if b == '"' {
-				if stringActive {
-					stringActive = !stringActive
-					tokens = append(tokens, newToken("STRING", "\""+stringBuffer+"\"", stringBuffer))
-					stringBuffer = ""
-				} else {
-					stringActive = true
-				}
-				continue
-			}
-
-			if b == '\n' {
-				if stringActive {
-					message := "Unterminated string."
-					errors = append(errors, LexError{currentLine, message})
-					stringActive = false
-					stringBuffer = ""
-				}
-				commentActive = false
-				breakContinuity = true
-				currentLine += 1
-				continue
-			}
-
-			if stringActive {
-				stringBuffer += string(b)
-				continue
-			}
-
-			if commentActive || slices.Contains(ignoreChars, b) {
-				breakContinuity = true
-				continue
-			}
-
-			if lexToken, ok := singleCharTokens[b]; ok {
-				isTokenContinous := slices.Contains(dualCharTokensTriggers, lexToken.tokenType)
-				if isTokenContinous && len(tokens) > 0 {
-					prev := tokens[len(tokens)-1]
-					lexemeCombined := prev.lexeme + lexToken.lexeme
-					if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok && !breakContinuity {
-						if dualLexToken.tokenType == "COMMENT" {
-							commentActive = true
-							tokens = tokens[:len(tokens)-1]
-							continue
-						}
-						tokens[len(tokens)-1] = dualLexToken
-					} else {
-						tokens = append(tokens, lexToken)
-					}
-				} else {
-					tokens = append(tokens, lexToken)
-				}
-			} else {
-				message := fmt.Sprintf("Unexpected character: %s", string(b))
-				errors = append(errors, LexError{currentLine, message})
-				breakContinuity = true
-				continue
-			}
-			breakContinuity = false
+		if slices.Contains(ignoreChars, b) {
+			continue
 		}
-	}
-	if numberActive {
-		if !strings.Contains(numberBuffer, ".") {
-			numberBuffer += ".0"
+
+		if b == '\n' {
+			currentLine += 1
+			continue
 		}
-		tokens = append(tokens, newToken("NUMBER", numberBuffer, numberBuffer))
-	}
-	if stringActive {
-		message := "Unterminated string."
+
+		if lexToken, ok := singleCharTokens[b]; ok {
+			handleSingleCharToken(lexToken, &tokens)
+			continue
+		}
+
+		if b == '"' {
+			err := handleStringToken(&tokens)
+			if err != nil {
+				errors = append(errors, err)
+			}
+			continue
+		}
+
+		if b >= '0' && b <= '9' {
+			err := handleNumberToken(&tokens)
+			if err != nil {
+				errors = append(errors, err)
+			}
+			continue
+		}
+
+		// doesn't match any token
+		message := fmt.Sprintf("Unexpected character: %s", string(b))
 		errors = append(errors, LexError{currentLine, message})
 	}
 	tokens = append(tokens, newTokenNoLit("EOF", ""))
-
 	return tokens, errors
 }
+
+func handleNumberToken(tokens *[]LexToken) error {
+	tickBack()
+	stringBuffer := ""
+	dotPresent := false
+
+	for b, ok := nextByte(); ok; b, ok = nextByte() {
+		if b >= '0' && b <= '9' {
+			stringBuffer += string(b)
+			continue
+		} else if b == '.' && !dotPresent {
+			dotPresent = true
+			stringBuffer += string(b)
+			continue
+		} else {
+			ogBuffer := stringBuffer
+			if !dotPresent {
+				stringBuffer += ".0"
+			}
+			*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
+			tickBack()
+			return nil
+		}
+	}
+
+	ogBuffer := stringBuffer
+	if !dotPresent {
+		stringBuffer += ".0"
+	}
+	*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
+	return nil
+}
+
+func handleStringToken(tokens *[]LexToken) error {
+	stringBuffer := ""
+
+	for b, ok := nextByte(); ok; b, ok = nextByte() {
+		if b == '"' {
+			*tokens = append(*tokens, newToken("STRING", "\""+stringBuffer+"\"", stringBuffer))
+			return nil
+		} else if b == '\n' {
+			tickBack()
+			message := "Unterminated string."
+			return LexError{currentLine, message}
+		}
+		stringBuffer += string(b)
+	}
+	message := "Unterminated string."
+	return LexError{currentLine, message}
+}
+
+func handleSingleCharToken(lexToken LexToken, tokens *[]LexToken) {
+	if slices.Contains(dualCharTokenTriggers, lexToken.lexeme) {
+		if b, ok := nextByte(); ok {
+			lexemeCombined := lexToken.lexeme + string(b)
+			if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok {
+				if dualLexToken.tokenType == "COMMENT" {
+					for cb, ok := nextByte(); ok; cb, ok = nextByte() {
+						if cb == '\n' {
+							tickBack()
+							return
+						}
+					}
+					return
+				}
+				*tokens = append(*tokens, dualLexToken)
+				return
+			}
+			tickBack()
+		}
+	}
+	*tokens = append(*tokens, lexToken)
+}
+
