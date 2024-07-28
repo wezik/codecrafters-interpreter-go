@@ -245,24 +245,34 @@ func handleStringToken(tokens *[]LexToken) error {
 }
 
 func handleSingleCharToken(lexToken LexToken, tokens *[]LexToken) {
-	if slices.Contains(dualCharTokenTriggers, lexToken.lexeme) {
-		if b, ok := nextByte(); ok {
-			lexemeCombined := lexToken.lexeme + string(b)
-			if dualLexToken, ok := dualCharTokens[lexemeCombined]; ok {
-				if dualLexToken.tokenType == "COMMENT" {
-					for cb, ok := nextByte(); ok; cb, ok = nextByte() {
-						if cb == '\n' {
-							tickBack()
-							return
-						}
-					}
-					return
-				}
-				*tokens = append(*tokens, dualLexToken)
-				return
-			}
+	if !slices.Contains(dualCharTokenTriggers, lexToken.lexeme) {
+		*tokens = append(*tokens, lexToken)
+		return
+	}
+
+	b, ok := nextByte();
+	if !ok {
+		*tokens = append(*tokens, lexToken)
+		return
+	}
+
+	lexemeCombined := lexToken.lexeme + string(b)
+	dualLexToken, ok := dualCharTokens[lexemeCombined]
+	if !ok {
+		*tokens = append(*tokens, lexToken)
+		tickBack()
+		return
+	}
+
+	if dualLexToken.tokenType != "COMMENT" {
+		*tokens = append(*tokens, dualLexToken)
+		return
+	}
+
+	for cb, ok := nextByte(); ok; cb, ok = nextByte() {
+		if cb == '\n' {
 			tickBack()
+			return
 		}
 	}
-	*tokens = append(*tokens, lexToken)
 }
