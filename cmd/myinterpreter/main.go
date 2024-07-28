@@ -113,6 +113,26 @@ var dualCharTokens = map[string]LexToken{
 	"//": newTokenNoLit("COMMENT", "//"),
 }
 
+var reservedWords = map[string]LexToken{
+	"and":    newTokenNoLit("AND", "and"),
+	"class":  newTokenNoLit("CLASS", "class"),
+	"else":   newTokenNoLit("ELSE", "else"),
+	"false":  newTokenNoLit("FALSE", "false"),
+	"for":    newTokenNoLit("FOR", "for"),
+	"fun":    newTokenNoLit("FUN", "fun"),
+	"if":     newTokenNoLit("IF", "if"),
+	"nil":    newTokenNoLit("NIL", "nil"),
+	"or":     newTokenNoLit("OR", "or"),
+	"return": newTokenNoLit("RETURN", "return"),
+	"super":  newTokenNoLit("SUPER", "super"),
+	"this":   newTokenNoLit("THIS", "this"),
+	"true":   newTokenNoLit("TRUE", "true"),
+	"var":    newTokenNoLit("VAR", "var"),
+	"while":  newTokenNoLit("WHILE", "while"),
+	"eof":    newTokenNoLit("EOF", "eof"),
+	"print":  newTokenNoLit("PRINT", "print"),
+}
+
 var ignoreChars = []byte{' ', '\t', '\r', '	'}
 
 var content = []byte{}
@@ -191,12 +211,15 @@ func handleIdentifierToken(tokens *[]LexToken) {
 			stringBuffer += string(b)
 			continue
 		} else {
-			*tokens = append(*tokens, newToken("IDENTIFIER", stringBuffer, "null"))
 			tickBack()
-			return
+			break
 		}
 	}
 
+	if lexToken, ok := reservedWords[stringBuffer]; ok {
+		*tokens = append(*tokens, lexToken)
+		return
+	}
 	*tokens = append(*tokens, newToken("IDENTIFIER", stringBuffer, "null"))
 }
 
