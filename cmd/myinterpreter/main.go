@@ -118,7 +118,7 @@ var contentN = -1
 var currentLine = 1
 
 func nextByte() (byte, bool) {
-	if contentN >= len(content) - 1 {
+	if contentN >= len(content)-1 {
 		return 0, false
 	}
 	contentN += 1
@@ -179,10 +179,14 @@ func handleNumberToken(tokens *[]LexToken) error {
 	tickBack()
 	stringBuffer := ""
 	dotPresent := false
+	nAfterDotPresent := false
 
 	for b, ok := nextByte(); ok; b, ok = nextByte() {
 		if b >= '0' && b <= '9' {
 			stringBuffer += string(b)
+			if dotPresent {
+				nAfterDotPresent = true
+			}
 			continue
 		} else if b == '.' && !dotPresent {
 			dotPresent = true
@@ -190,8 +194,15 @@ func handleNumberToken(tokens *[]LexToken) error {
 			continue
 		} else {
 			ogBuffer := stringBuffer
+
 			if !dotPresent {
-				stringBuffer += ".0"
+				stringBuffer += "."
+			}
+			if !nAfterDotPresent {
+				stringBuffer += "0"
+				if ogBuffer[len(ogBuffer)-1] == '.' {
+					ogBuffer = ogBuffer[:len(ogBuffer)-1]
+				}
 			}
 			*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
 			tickBack()
@@ -201,7 +212,13 @@ func handleNumberToken(tokens *[]LexToken) error {
 
 	ogBuffer := stringBuffer
 	if !dotPresent {
-		stringBuffer += ".0"
+		stringBuffer += "."
+	}
+	if !nAfterDotPresent {
+		if ogBuffer[len(ogBuffer)-1] == '.' {
+			ogBuffer = ogBuffer[:len(ogBuffer)-1]
+		}
+		stringBuffer += "0"
 	}
 	*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
 	return nil
@@ -247,4 +264,3 @@ func handleSingleCharToken(lexToken LexToken, tokens *[]LexToken) {
 	}
 	*tokens = append(*tokens, lexToken)
 }
-
