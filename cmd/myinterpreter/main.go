@@ -167,12 +167,33 @@ func tokenize(input []byte) ([]LexToken, []error) {
 			continue
 		}
 
+		if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_' {
+			handleIdentifierToken(&tokens)
+			continue
+		}
+
 		// doesn't match any token
 		message := fmt.Sprintf("Unexpected character: %s", string(b))
 		errors = append(errors, LexError{currentLine, message})
 	}
 	tokens = append(tokens, newTokenNoLit("EOF", ""))
 	return tokens, errors
+}
+
+func handleIdentifierToken(tokens *[]LexToken) {
+	tickBack()
+	stringBuffer := ""
+
+	for b, ok := nextByte(); ok; b, ok = nextByte() {
+		if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' {
+			stringBuffer += string(b)
+			continue
+		} else {
+			*tokens = append(*tokens, newToken("IDENTIFIER", stringBuffer, "null"))
+			tickBack()
+			return
+		}
+	}
 }
 
 func handleNumberToken(tokens *[]LexToken) error {
