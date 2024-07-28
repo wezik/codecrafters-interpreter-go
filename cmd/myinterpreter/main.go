@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
+	"strings"
 )
 
 func main() {
@@ -201,51 +203,36 @@ func handleIdentifierToken(tokens *[]LexToken) {
 func handleNumberToken(tokens *[]LexToken) error {
 	tickBack()
 	stringBuffer := ""
-	dotPresent := false
-	nAfterDotPresent := false
 
 	for b, ok := nextByte(); ok; b, ok = nextByte() {
 		if b >= '0' && b <= '9' {
 			stringBuffer += string(b)
-			if dotPresent {
-				nAfterDotPresent = true
-			}
 			continue
-		} else if b == '.' && !dotPresent {
-			dotPresent = true
+		} else if b == '.' && !strings.Contains(stringBuffer, ".") {
 			stringBuffer += string(b)
 			continue
 		} else {
-			ogBuffer := stringBuffer
-
-			if !dotPresent {
-				stringBuffer += "."
-			}
-			if !nAfterDotPresent {
-				stringBuffer += "0"
-				if ogBuffer[len(ogBuffer)-1] == '.' {
-					ogBuffer = ogBuffer[:len(ogBuffer)-1]
-					tickBack()
-				}
-			}
-			*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
 			tickBack()
-			return nil
+			break
 		}
 	}
 
-	ogBuffer := stringBuffer
-	if !dotPresent {
-		stringBuffer += "."
+	if stringBuffer[len(stringBuffer)-1] == '.' {
+		stringBuffer = stringBuffer[:len(stringBuffer)-1]
+		tickBack()
 	}
-	if !nAfterDotPresent {
-		if ogBuffer[len(ogBuffer)-1] == '.' {
-			ogBuffer = ogBuffer[:len(ogBuffer)-1]
-			tickBack()
-		}
-		stringBuffer += "0"
+
+	f, err := strconv.ParseFloat(stringBuffer, 64)
+	if err != nil {
+		message := fmt.Sprintf("Invalid number: %s", stringBuffer)
+		return LexError{currentLine, message}
 	}
-	*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
+
+	formattedBuffer := strconv.FormatFloat(f, 'f', -1, 64)
+	if !strings.Contains(formattedBuffer, ".") {
+		formattedBuffer += ".0"
+	}
+	*tokens = append(*tokens, newToken("NUMBER", stringBuffer, formattedBuffer))
 	return nil
 }
 
