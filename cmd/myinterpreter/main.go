@@ -194,6 +194,8 @@ func handleIdentifierToken(tokens *[]LexToken) {
 			return
 		}
 	}
+
+	*tokens = append(*tokens, newToken("IDENTIFIER", stringBuffer, "null"))
 }
 
 func handleNumberToken(tokens *[]LexToken) error {
