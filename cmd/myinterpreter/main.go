@@ -250,7 +250,7 @@ func handleSingleCharToken(lexToken LexToken, tokens *[]LexToken) {
 		return
 	}
 
-	b, ok := nextByte();
+	b, ok := nextByte()
 	if !ok {
 		*tokens = append(*tokens, lexToken)
 		return
