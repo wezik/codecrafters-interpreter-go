@@ -202,6 +202,7 @@ func handleNumberToken(tokens *[]LexToken) error {
 				stringBuffer += "0"
 				if ogBuffer[len(ogBuffer)-1] == '.' {
 					ogBuffer = ogBuffer[:len(ogBuffer)-1]
+					tickBack()
 				}
 			}
 			*tokens = append(*tokens, newToken("NUMBER", ogBuffer, stringBuffer))
@@ -217,6 +218,7 @@ func handleNumberToken(tokens *[]LexToken) error {
 	if !nAfterDotPresent {
 		if ogBuffer[len(ogBuffer)-1] == '.' {
 			ogBuffer = ogBuffer[:len(ogBuffer)-1]
+			tickBack()
 		}
 		stringBuffer += "0"
 	}
