@@ -157,7 +157,7 @@ func tickBack() {
 
 func parse(tokens []LexToken) {
 	for _, t := range tokens {
-		if t.tokenType == "TRUE" || t.tokenType == "FALSE" {
+		if t.tokenType == "TRUE" || t.tokenType == "FALSE" || t.tokenType == "NIL" {
 			fmt.Printf("%s\n", t.lexeme)
 		}
 	}
