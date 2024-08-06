@@ -9,10 +9,7 @@ import (
 )
 
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-
-	fileContents := readArgs()
+	fileContents, cmd := readArgs()
 
 	tokens, errors := tokenize(fileContents)
 
@@ -23,8 +20,14 @@ func main() {
 		}
 	}
 
-	for _, t := range tokens {
-		fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
+	if cmd == "tokenize" {
+		for _, t := range tokens {
+			fmt.Printf("%s %s %s\n", t.tokenType, t.lexeme, t.literal)
+		}
+	}
+
+	if cmd == "parse" {
+		parse(tokens)
 	}
 
 	if errorsLen > 0 {
@@ -33,7 +36,7 @@ func main() {
 
 }
 
-func readArgs() []byte {
+func readArgs() ([]byte, string) {
 	if len(os.Args) < 3 {
 		fmt.Fprintln(os.Stderr, "Usage: ./your_program.sh tokenize <filename>")
 		os.Exit(1)
@@ -41,7 +44,7 @@ func readArgs() []byte {
 
 	command := os.Args[1]
 
-	if command != "tokenize" {
+	if command != "tokenize" && command != "parse" {
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
 	}
@@ -53,7 +56,7 @@ func readArgs() []byte {
 		os.Exit(1)
 	}
 
-	return fileContents
+	return fileContents, command
 }
 
 type LexError struct {
@@ -150,6 +153,14 @@ func nextByte() (byte, bool) {
 
 func tickBack() {
 	contentN -= 1
+}
+
+func parse(tokens []LexToken) {
+	for _, t := range tokens {
+		if t.tokenType == "TRUE" || t.tokenType == "FALSE" {
+			fmt.Printf("%s\n", t.lexeme)
+		}
+	}
 }
 
 func tokenize(input []byte) ([]LexToken, []error) {
