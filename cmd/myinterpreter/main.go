@@ -155,17 +155,22 @@ func tickBack() {
 	contentN -= 1
 }
 
-var singleParseTokens = []string {
+var tokensToLexeme = []string {
 	"TRUE",
 	"FALSE",
 	"NIL",
 }
 
+var tokensToLiteral = []string {
+	"NUMBER",
+	"STRING",
+}
+
 func parse(tokens []LexToken) {
 	for _, t := range tokens {
-		if slices.Contains(singleParseTokens, t.tokenType) {
+		if slices.Contains(tokensToLexeme, t.tokenType) {
 			fmt.Printf("%s\n", t.lexeme)
-		} else if t.tokenType == "NUMBER" {
+		} else if slices.Contains(tokensToLiteral, t.tokenType) {
 			fmt.Printf("%s\n", t.literal)
 		}
 	}
