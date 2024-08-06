@@ -159,13 +159,14 @@ var singleParseTokens = []string {
 	"TRUE",
 	"FALSE",
 	"NIL",
-	"NUMBER",
 }
 
 func parse(tokens []LexToken) {
 	for _, t := range tokens {
 		if slices.Contains(singleParseTokens, t.tokenType) {
 			fmt.Printf("%s\n", t.lexeme)
+		} else if t.tokenType == "NUMBER" {
+			fmt.Printf("%s\n", t.literal)
 		}
 	}
 }
