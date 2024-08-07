@@ -168,10 +168,8 @@ func Tokenize(fileContents []byte) ([]LexToken, []error) {
 	errs := make([]error, 0)
 	lexTokens := make([]LexToken, 0)
 
-	i = 0
 	line = 1
-
-	for ; i < len(fileContents); i++ {
+	for i = 0; i < len(fileContents); i++ {
 		b := fileContents[i]
 
 		if b == '\n' {

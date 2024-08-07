@@ -13,7 +13,7 @@ func PrintTokens(tokens []engine.LexToken) {
 	}
 }
 
-func PrintAST(ast []engine.LexAST) {
+func PrintAST(ast []engine.Expr) {
 	for _, a := range ast {
 		fmt.Println(a)
 	}

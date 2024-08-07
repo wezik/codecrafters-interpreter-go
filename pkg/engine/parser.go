@@ -1,35 +1,44 @@
 package engine
 
-import "slices"
+import (
+	"slices"
+)
 
-type LexAST struct {
-	//TODO
-	value string
+type Expr interface {
+	String() string
 }
 
-func (a LexAST) String() string {
-	//TODO
-	return a.value
+type ExprLiteral struct {
+	lexToken LexToken
 }
 
-var tokenToLexeme = []string{
+func (e ExprLiteral) String() string {
+	tokenType := e.lexToken.TokenType
+	switch tokenType {
+	case TOKEN_NUMBER, TOKEN_STRING:
+		return e.lexToken.Literal
+	case TOKEN_TRUE, TOKEN_FALSE:
+		return e.lexToken.Lexeme
+	case TOKEN_NIL:
+		return e.lexToken.Lexeme
+	}
+	return "nil"
+}
+
+var literalTokens = []string{
+	TOKEN_NUMBER,
+	TOKEN_STRING,
 	TOKEN_TRUE,
 	TOKEN_FALSE,
 	TOKEN_NIL,
 }
 
-var tokenToLiteral = []string{
-	TOKEN_NUMBER,
-	TOKEN_STRING,
-}
-
-func Parse(lexTokens []LexToken) ([]LexAST, []error) {
-	var ast []LexAST
-	for _, t := range lexTokens {
-		if slices.Contains(tokenToLexeme, t.TokenType) {
-			ast = append(ast, LexAST{t.Lexeme})
-		} else if slices.Contains(tokenToLiteral, t.TokenType) {
-			ast = append(ast, LexAST{t.Literal})
+func Parse(lexTokens []LexToken) ([]Expr, []error) {
+	var ast []Expr
+	for i = 0; i < len(lexTokens); i++ {
+		t := lexTokens[i]
+		if slices.Contains(literalTokens, t.TokenType) {
+			ast = append(ast, ExprLiteral{t})
 		}
 	}
 	return ast, nil
