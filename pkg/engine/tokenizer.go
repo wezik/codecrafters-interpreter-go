@@ -76,7 +76,7 @@ const (
 )
 
 var tokenPresets = map[string]LexToken{
-	TOKEN_EOF:           newTokenNoLit(TOKEN_EOF, "eof"),
+	TOKEN_EOF:           newTokenNoLit(TOKEN_EOF, ""),
 	TOKEN_LEFT_PAREN:    newTokenNoLit(TOKEN_LEFT_PAREN, "("),
 	TOKEN_RIGHT_PAREN:   newTokenNoLit(TOKEN_RIGHT_PAREN, ")"),
 	TOKEN_LEFT_BRACE:    newTokenNoLit(TOKEN_LEFT_BRACE, "{"),
