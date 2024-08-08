@@ -296,7 +296,8 @@ func tokenizeSimpleToken(fileContents []byte, tokens *[]LexToken) {
 	}
 	if i > 0 && i < len(fileContents) {
 		previousByte := fileContents[i-1]
-		if !util.IsWhitespace(previousByte) {
+		lastToken := (*tokens)[len(*tokens)-1]
+		if lastToken.Lexeme == string(previousByte) {
 			lastToken := (*tokens)[len(*tokens)-1]
 			combinedLexeme := lastToken.Lexeme + string(fileContents[i])
 			if tokenType, ok := runesTokenMap[combinedLexeme]; ok {
@@ -304,10 +305,11 @@ func tokenizeSimpleToken(fileContents []byte, tokens *[]LexToken) {
 					*tokens = (*tokens)[:len(*tokens)-1]
 					for ; i < len(fileContents); i++ {
 						if fileContents[i] == '\n' {
-							i--
-							return
+							break
 						}
 					}
+					i--
+					return
 				}
 				*tokens = (*tokens)[:len(*tokens)-1]
 				*tokens = append(*tokens, getPresetToken(tokenType))
