@@ -27,7 +27,7 @@ func (e ExprLiteral) String() string {
 }
 
 type ExprGroup struct {
-	Exprs []Expr
+	Exprs  []Expr
 	Parent *ExprGroup
 }
 
