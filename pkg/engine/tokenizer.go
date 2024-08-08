@@ -258,6 +258,9 @@ func tokenizeNumber(fileContents []byte, tokens *[]LexToken) error {
 		if !util.IsDigit(b) && !util.IsFirstDot(b, stringBuffer) {
 			i--
 			break
+		} else if util.IsFirstDot(b, stringBuffer) && i >= len(fileContents)-1 {
+			i--
+			break
 		}
 		stringBuffer += string(b)
 	}
