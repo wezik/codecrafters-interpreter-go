@@ -26,6 +26,15 @@ func (e ExprLiteral) String() string {
 	return "nil"
 }
 
+type ExprUnary struct {
+	LexToken LexToken
+	Expr     Expr
+}
+
+func (e ExprUnary) String() string {
+	return fmt.Sprintf("(%s %s)", e.LexToken.Lexeme, e.Expr.String())
+}
+
 type ExprGroup struct {
 	Exprs  []Expr
 	Parent *ExprGroup
@@ -47,7 +56,8 @@ func Parse(lexTokens []LexToken) ([]Expr, []error) {
 	globalGroup := &ExprGroup{Exprs: []Expr{}, Parent: nil}
 	currentGroup := globalGroup
 
-	for _, lexT := range lexTokens {
+	for lexI := 0; lexI < len(lexTokens); lexI++ {
+		lexT := lexTokens[lexI]
 		switch lexT.TokenType {
 		case TOKEN_LEFT_PAREN:
 			newGroup := ExprGroup{Exprs: []Expr{}, Parent: currentGroup}
@@ -64,6 +74,14 @@ func Parse(lexTokens []LexToken) ([]Expr, []error) {
 			currentGroup = currentGroup.Parent
 		case TOKEN_NUMBER, TOKEN_STRING, TOKEN_TRUE, TOKEN_FALSE, TOKEN_NIL:
 			currentGroup.Exprs = append(currentGroup.Exprs, ExprLiteral{lexT})
+		case TOKEN_MINUS, TOKEN_BANG:
+			if lexI < len(lexTokens)-1 {
+				nextLexT := lexTokens[lexI+1]
+				currentGroup.Exprs = append(currentGroup.Exprs, ExprUnary{lexT, ExprLiteral{nextLexT}})
+				lexI++
+				continue
+			}
+			errs = append(errs, fmt.Errorf("Error: Unexpected token: %s", lexT.Lexeme))
 		}
 	}
 	if currentGroup.Parent != nil {
