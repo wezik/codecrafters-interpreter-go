@@ -127,10 +127,21 @@ func parseComparison(parser *Parser) (Expr, error) {
 }
 
 func parseTerm(parser *Parser) (Expr, error) {
-	// if false {
-	// }
+	expr, err := parseFactor(parser)
+	if err != nil {
+		return nil, err
+	}
 
-	return parseFactor(parser)
+	for parser.match(TOKEN_PLUS, TOKEN_MINUS) {
+		operator := parser.previous()
+		right, err := parseFactor(parser)
+		if err != nil {
+			return nil, err
+		}
+		expr = &ExprBinary{expr, operator, right}
+	}
+
+	return expr, err
 }
 
 func parseFactor(parser *Parser) (Expr, error) {
