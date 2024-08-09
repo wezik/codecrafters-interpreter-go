@@ -32,17 +32,21 @@ func (e *ExprGroup) String() string {
 
 type ExprUnary struct {
 	LexToken LexToken
-	Expr     *Expr
+	Expr     Expr
 }
 
 func (e *ExprUnary) String() string {
-	return fmt.Sprintf("(%s %s)", e.LexToken.Lexeme, (*e.Expr).String())
+	return fmt.Sprintf("(%s %s)", e.LexToken.Lexeme, e.Expr.String())
 }
 
 type ExprBinary struct {
-	Left     *Expr
+	Left     Expr
 	Operator LexToken
-	Right    *Expr
+	Right    Expr
+}
+
+func (e *ExprBinary) String() string {
+	return fmt.Sprintf("(%s %s %s)", e.Operator.Lexeme, e.Left.String(), e.Right.String())
 }
 
 type Parser struct {
@@ -72,6 +76,7 @@ func (p *Parser) check(tokenType string) bool {
 func (p *Parser) match(tokenTypes ...string) bool {
 	for _, tokenType := range tokenTypes {
 		if p.check(tokenType) {
+			p.advance()
 			return true
 		}
 	}
@@ -108,63 +113,67 @@ func parseExpression(parser *Parser) (Expr, error) {
 }
 
 func parseEquality(parser *Parser) (Expr, error) {
-	if false {
-	}
+	// if false {
+	// }
 
 	return parseComparison(parser)
 }
 
 func parseComparison(parser *Parser) (Expr, error) {
-	if false {
-	}
+	// if false {
+	// }
 
 	return parseTerm(parser)
 }
 
 func parseTerm(parser *Parser) (Expr, error) {
-	if false {
-	}
+	// if false {
+	// }
 
 	return parseFactor(parser)
 }
 
 func parseFactor(parser *Parser) (Expr, error) {
-	if false {
+	expr, err := parseUnary(parser)
+	if err != nil {
+		return nil, err
 	}
 
-	return parseUnary(parser)
-}
-
-func parseUnary(parser *Parser) (Expr, error) {
-	if parser.match(TOKEN_BANG, TOKEN_MINUS) {
-		parser.advance()
+	for parser.match(TOKEN_SLASH, TOKEN_STAR) {
 		operator := parser.previous()
 		right, err := parseUnary(parser)
 		if err != nil {
 			return nil, err
 		}
-		return &ExprUnary{operator, &right}, nil
+		expr = &ExprBinary{expr, operator, right}
+	}
+	return expr, err
+}
+
+func parseUnary(parser *Parser) (Expr, error) {
+	if parser.match(TOKEN_BANG, TOKEN_MINUS) {
+		operator := parser.previous()
+		right, err := parseUnary(parser)
+		if err != nil {
+			return nil, err
+		}
+		return &ExprUnary{operator, right}, nil
 	}
 	return parsePrimary(parser)
 }
 
 func parsePrimary(parser *Parser) (Expr, error) {
 	if parser.match(TOKEN_NUMBER, TOKEN_STRING, TOKEN_TRUE, TOKEN_FALSE, TOKEN_NIL) {
-		parser.advance()
 		return &ExprLiteral{parser.previous()}, nil
-	} else if parser.check(TOKEN_LEFT_PAREN) {
-		parser.advance()
+	} else if parser.match(TOKEN_LEFT_PAREN) {
 		expr, err := parseExpression(parser)
 		if err != nil {
-			parser.advance()
 			return nil, err
 		}
 		if expr == nil {
-			parser.advance()
 			return nil, nil
 		}
-		if parser.check(TOKEN_RIGHT_PAREN) {
-			parser.advance()
+		if parser.match(TOKEN_RIGHT_PAREN) {
 			return &ExprGroup{expr}, nil
 		}
 	}
