@@ -177,5 +177,6 @@ func parsePrimary(parser *Parser) (Expr, error) {
 			return &ExprGroup{expr}, nil
 		}
 	}
+	parser.advance()
 	return nil, fmt.Errorf("Error: unmatched parenthesis")
 }
