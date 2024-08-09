@@ -13,11 +13,11 @@ import (
 func main() {
 	fileContents, cmd := readArgs(os.Args)
 
-	if cmd == CMD_TOKENIZE {
+	if cmd == CMD_TOKENIZE || cmd == CMD_T {
 		cmd_tokenize.Run(fileContents)
-	} else if cmd == CMD_PARSE {
+	} else if cmd == CMD_PARSE || cmd == CMD_P {
 		cmd_parse.Run(fileContents)
-	} else if cmd == CMD_EVALUATE || cmd == CMD_EVAL {
+	} else if cmd == CMD_EVALUATE || cmd == CMD_EVAL || cmd == CMD_E {
 		cmd_evaluate.Run(fileContents)
 	}
 
@@ -26,16 +26,22 @@ func main() {
 
 const (
 	CMD_TOKENIZE = "tokenize"
+	CMD_T        = "t"
 	CMD_PARSE    = "parse"
+	CMD_P        = "p"
 	CMD_EVALUATE = "evaluate"
 	CMD_EVAL     = "eval"
+	CMD_E        = "e"
 )
 
 var availableCommands = []string{
 	CMD_TOKENIZE,
+	CMD_T,
 	CMD_PARSE,
+	CMD_P,
 	CMD_EVALUATE,
 	CMD_EVAL,
+	CMD_E,
 }
 
 func readArgs(args []string) ([]byte, string) {
