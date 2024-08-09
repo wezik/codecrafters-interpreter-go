@@ -120,10 +120,22 @@ func parseEquality(parser *Parser) (Expr, error) {
 }
 
 func parseComparison(parser *Parser) (Expr, error) {
-	// if false {
-	// }
+	expr, err := parseTerm(parser)
+	if err != nil {
+		return nil, err
+	}
+	
+	for parser.match(TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL) {
+		operator := parser.previous()
+		right, err := parseTerm(parser)
+		if err != nil {
+			return nil, err
+		}
+		expr = &ExprBinary{expr, operator, right}
+	}
 
-	return parseTerm(parser)
+
+	return expr, nil
 }
 
 func parseTerm(parser *Parser) (Expr, error) {
@@ -141,7 +153,7 @@ func parseTerm(parser *Parser) (Expr, error) {
 		expr = &ExprBinary{expr, operator, right}
 	}
 
-	return expr, err
+	return expr, nil
 }
 
 func parseFactor(parser *Parser) (Expr, error) {
@@ -158,7 +170,7 @@ func parseFactor(parser *Parser) (Expr, error) {
 		}
 		expr = &ExprBinary{expr, operator, right}
 	}
-	return expr, err
+	return expr, nil
 }
 
 func parseUnary(parser *Parser) (Expr, error) {
