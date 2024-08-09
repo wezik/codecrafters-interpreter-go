@@ -50,7 +50,7 @@ func (e *ExprBinary) String() string {
 }
 
 type Parser struct {
-	tokens []LexToken
+	tokens      []LexToken
 	tokensIndex int
 }
 
@@ -113,10 +113,22 @@ func parseExpression(parser *Parser) (Expr, error) {
 }
 
 func parseEquality(parser *Parser) (Expr, error) {
-	// if false {
-	// }
+	expr, err := parseComparison(parser)
+	if err != nil {
+		return nil, err
+	}
 
-	return parseComparison(parser)
+	for parser.match(TOKEN_EQUAL_EQUAL, TOKEN_BANG_EQUAL) {
+		operator := parser.previous()
+		right, err := parseComparison(parser)
+		if err != nil {
+			return nil, err
+		}
+		expr = &ExprBinary{expr, operator, right}
+	}
+
+	return expr, nil
+
 }
 
 func parseComparison(parser *Parser) (Expr, error) {
@@ -124,7 +136,7 @@ func parseComparison(parser *Parser) (Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for parser.match(TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL) {
 		operator := parser.previous()
 		right, err := parseTerm(parser)
@@ -133,7 +145,6 @@ func parseComparison(parser *Parser) (Expr, error) {
 		}
 		expr = &ExprBinary{expr, operator, right}
 	}
-
 
 	return expr, nil
 }
