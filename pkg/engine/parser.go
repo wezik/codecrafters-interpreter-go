@@ -210,7 +210,8 @@ func parsePrimary(parser *Parser) (Expr, error) {
 		if parser.match(TOKEN_RIGHT_PAREN) {
 			return &ExprGroup{expr}, nil
 		}
+		return nil, fmt.Errorf("Error: unmatched parenthesis")
 	}
 	parser.advance()
-	return nil, fmt.Errorf("Error: unmatched parenthesis")
+	return nil, fmt.Errorf("Error: expected expression")
 }
